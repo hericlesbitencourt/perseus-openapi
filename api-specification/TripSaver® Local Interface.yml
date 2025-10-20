@@ -1,0 +1,398 @@
+openapi: 3.0.0
+info:
+  title: TripSaver® FXR Recloser LTE Communication Module Local Interface
+  description: API for managing TripSaver FXR recloser devices.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: Authentication-related endpoints
+  - name: Device
+    description: Device-related endpoints
+  - name: Security
+    description: Security and access control
+  - name: Application Settings
+    description: Application-level settings
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: 'user@example.com'
+                password:
+                  type: string
+                  format: password
+                  example: 'P@ssw0rd!'
+      responses:
+        '200':
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                  refreshToken:
+                    type: string
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                  role:
+                    type: string
+                    example: 'admin | engineer | technician'
+        '401':
+          description: Invalid credentials
+
+  /general-info:
+    get:
+      tags:
+        - Device
+      summary: Get general device information
+      responses:
+        '200':
+          description: General device information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imei:
+                    type: string
+                    example: '350936963397063'
+                  connectedApn:
+                    type: string
+                    example: 'apnlactec.com.br'
+                  modemModel:
+                    type: string
+                    example: 'LE910C1-WWXD'
+                  batteryVoltage:
+                    type: string
+                    example: '3.3V'
+                  chargeStatus:
+                    type: string
+                    example: '83%'
+                  energyDirection:
+                    type: string
+                    example: 'Attached to NGTS but COMM Module is not energized'
+                  coordinates:
+                    type: string
+                    example: '-25.447861,-49.243150'
+                  connectedCarrier:
+                    type: string
+                    example: 'TIM'
+                  connectionType:
+                    type: string
+                    example: '4G'
+                  iccid:
+                    type: string
+                    example: '89550447000021156188'
+                  iccidFromEsim:
+                    type: string
+                    example: '123456789'
+                  currentFirmwareVersion:
+                    type: string
+                    example: '4.0.01'
+
+  /logs/comm/download:
+    get:
+      tags:
+        - Device
+      summary: Download selected Comm logs
+      parameters:
+        - in: query
+          name: types
+          schema:
+            type: array
+            items:
+              type: string
+            example: ['events', 'errors']
+      responses:
+        '200':
+          description: Comm logs downloaded
+
+  /firmware/comm/upgrade:
+    post:
+      tags:
+        - Device
+      summary: Upgrade Comm firmware
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Comm firmware upgraded successfully
+
+  /config/common/import:
+    post:
+      tags:
+        - Device
+      summary: Import common configuration file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Common configuration imported
+
+  /config/common/export:
+    get:
+      tags:
+        - Device
+      summary: Export common configuration
+      responses:
+        '200':
+          description: Common configuration exported
+
+  /config/specific/import:
+    post:
+      tags:
+        - Device
+      summary: Import specific configuration file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Specific configuration imported
+
+  /config/specific/export:
+    get:
+      tags:
+        - Device
+      summary: Export specific configuration
+      responses:
+        '200':
+          description: Specific configuration exported
+
+  /security/csr/download:
+    get:
+      tags:
+        - Security
+      summary: Download CSR for certificate
+      responses:
+        '200':
+          description: CSR downloaded
+
+  /security/certificate/upload:
+    post:
+      tags:
+        - Security
+      summary: Upload certificate to comm module
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                certificate:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Certificate uploaded
+
+  /security/passphrase/save:
+    put:
+      tags:
+        - Security
+      summary: Save passphrase for comm module
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                passphrase:
+                  type: string
+      responses:
+        '200':
+          description: Passphrase saved
+
+  /security/passphrase/delete:
+    delete:
+      tags:
+        - Security
+      summary: Delete passphrase from comm module
+      responses:
+        '200':
+          description: Passphrase deleted
+
+  /security/admin-password/update:
+    put:
+      tags:
+        - Security
+      summary: Update local admin password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Admin password updated
+
+  /security/admin-password/reset:
+    post:
+      tags:
+        - Security
+      summary: Reset local admin password
+      responses:
+        '200':
+          description: Local admin password reset
+
+  /security/remote-passwords/reset:
+    post:
+      tags:
+        - Security
+      summary: Reset all remote roles passwords to factory default
+      responses:
+        '200':
+          description: Remote roles passwords reset to factory default
+
+  /security/master-reset:
+    post:
+      tags:
+        - Security
+      summary: Reset device to default factory configuration
+      responses:
+        '200':
+          description: Device reset to default factory configuration
+
+  /security/reboot-comm-module:
+    post:
+      tags:
+        - Security
+      summary: Reboot communication module
+      responses:
+        '200':
+          description: Communication module rebooted
+
+  /settings:
+    get:
+      tags:
+        - Application Settings
+      summary: Get current application settings
+      responses:
+        '200':
+          description: Settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  language:
+                    type: string
+                    example: 'English'
+                  dateFormat:
+                    type: string
+                    example: 'mm-dd-yyyy'
+                  timeFormat:
+                    type: string
+                    example: '12-hour | 24-hour'
+
+  /settings/language:
+    put:
+      tags:
+        - Application Settings
+      summary: Update application language
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  example: 'English | Spanish'
+      responses:
+        '200':
+          description: Language updated successfully
+
+  /settings/date-format:
+    put:
+      tags:
+        - Application Settings
+      summary: Update date format
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dateFormat:
+                  type: string
+                  example: 'mm-dd-yyyy | dd-mm-yyyy | yyyy-mm-dd'
+      responses:
+        '200':
+          description: Date format updated successfully
+
+  /settings/time-format:
+    put:
+      tags:
+        - Application Settings
+      summary: Update time format
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timeFormat:
+                  type: string
+                  example: '12-hour | 24-hour'
+      responses:
+        '200':
+          description: Time format updated successfully
