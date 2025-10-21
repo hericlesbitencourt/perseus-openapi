@@ -178,15 +178,10 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          text/plain:
             schema:
-              type: object
-              required:
-                - version
-              properties:
-                version:
-                  type: string
-                  example: '4.0.01'
+              type: string
+            example: '4.0.01'
       responses:
         '200':
           description: Firmware activated successfully
@@ -355,13 +350,11 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
+            example:
+              setting: value
       responses:
         '200':
           description: Common configuration imported
