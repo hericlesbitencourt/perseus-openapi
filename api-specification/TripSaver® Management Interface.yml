@@ -131,22 +131,114 @@ paths:
                     type: string
                     example: '4.0.01'
 
-  /logs/tripsaver/download:
+  /logs/tripsaver/download/real-time-nameplate:
     get:
       tags:
         - Device
-      summary: Download selected TripSaver logs
-      parameters:
-        - in: query
-          name: type
-          schema:
-            type: string
-            example: system-analytics
+      summary: Download realtime data - nameplate
       responses:
         '200':
-          description: TripSaver logs downloaded
+          description: Nameplate realtime data as JSON
           content:
-            application/zip:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /logs/tripsaver/download/real-time-variables:
+    get:
+      tags:
+        - Device
+      summary: Download realtime data - variables
+      responses:
+        '200':
+          description: Variables realtime data as JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /logs/tripsaver/download/real-time-statistics:
+    get:
+      tags:
+        - Device
+      summary: Download realtime data - statistics
+      responses:
+        '200':
+          description: Statistics realtime data as JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /logs/tripsaver/download/overcurrent:
+    get:
+      tags:
+        - Device
+      summary: Download overcurrent/trip events log
+      responses:
+        '200':
+          description: Overcurrent/trip events as CSV
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+
+  /logs/tripsaver/download/fault-interrupting:
+    get:
+      tags:
+        - Device
+      summary: Download fault interrupting WFC log
+      responses:
+        '200':
+          description: Fault interrupting log as binary file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /logs/tripsaver/download/system-analytics:
+    get:
+      tags:
+        - Device
+      summary: Download system analytics log
+      responses:
+        '200':
+          description: System analytics as JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /logs/tripsaver/download/engineering:
+    get:
+      tags:
+        - Device
+      summary: Download engineering events log
+      responses:
+        '200':
+          description: Engineering events as CSV
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+
+  /logs/tripsaver/download/security:
+    get:
+      tags:
+        - Device
+      summary: Download security events log
+      responses:
+        '200':
+          description: Security events as CSV
+          content:
+            text/csv:
               schema:
                 type: string
                 format: binary
@@ -166,9 +258,53 @@ paths:
                 file:
                   type: string
                   format: binary
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
       responses:
         '200':
-          description: TripSaver firmware upgraded successfully
+          description: TripSaver firmware uploaded successfully (progress stream may follow)
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Upload succeeded'
+        '406':
+          description: Digital signature verification was unsuccessful
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Digital signature verification was unsuccessful'
+        '412':
+          description: Uploaded firmware image is the same as the current active one
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Uploaded firmware image is the same as the current active one'
+        '413':
+          description: Uploaded firmware image is too large
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Uploaded firmware image is too large'
+        '415':
+          description: Firmware image is invalid
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Firmware image is invalid'
+        '500':
+          description: Firmware upload failed (internal server error)
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Firmware upload failed'
 
   /firmware/activate:
     post:
@@ -185,6 +321,63 @@ paths:
       responses:
         '200':
           description: Firmware activated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: activated
+                  component:
+                    type: string
+                    example: tripsaver
+                  version:
+                    type: string
+                    example: 4.0.01
+                  message:
+                    type: string
+                    example: Firmware activated successfully
+        '402':
+          description: Specified version is not found in the TripSaver firmware storage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Specified version is not found in the TripSaver firmware storage
+        '412':
+          description: Attempt to activate currently active version
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Attempt to activate currently active version
+        '503':
+          description: TS3 overcurrent algorithm is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: TS3 overcurrent algorithm is running
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Internal server error during activation
   /firmware/available-versions:
     get:
       tags:
@@ -239,6 +432,21 @@ paths:
           description: TripSaver configuration exported
 
   /security/mode:
+    get:
+      tags:
+        - Security
+      summary: Get current security mode
+      responses:
+        '200':
+          description: Security mode retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mode:
+                    type: string
+                    enum: [no-security, passphrase, certificate]
     put:
       tags:
         - Security
@@ -313,7 +521,7 @@ paths:
           name: type
           schema:
             type: string
-            example: events
+            example: engineering-events
       responses:
         '200':
           description: Comm logs downloaded
@@ -331,6 +539,10 @@ paths:
       requestBody:
         required: true
         content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
           multipart/form-data:
             schema:
               type: object
@@ -473,6 +685,15 @@ paths:
       responses:
         '200':
           description: Passwords reset to factory default
+
+  /security/master-reset:
+    post:
+      tags:
+        - Security
+      summary: Reset device to factory default configuration
+      responses:
+        '200':
+          description: Device reset initiated
 
   /security/reboot-comm-module:
     post:
