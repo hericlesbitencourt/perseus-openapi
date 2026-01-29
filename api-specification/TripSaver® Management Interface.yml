@@ -49,15 +49,19 @@ paths:
               schema:
                 type: object
                 properties:
-                  accessToken:
+                  token:
                     type: string
-                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-                  refreshToken:
+                    example: 'b1a2c3d4e5f6'
+                  username:
                     type: string
-                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                    example: 'admin'
                   role:
                     type: string
                     example: 'admin | engineer | technician'
+                  interface:
+                    type: string
+                    enum: [local, management]
+                    example: management
         '401':
           description: Invalid credentials
 
@@ -79,7 +83,49 @@ paths:
                     example: 'SUCCESSFUL'
                   securityStatus:
                     type: string
-                    example: 'CERTIFICATE BASED SECURITY'
+                    enum: ['NONE', 'PASSPHRASE BASED SECURITY', 'CERTIFICATE BASED SECURITY']
+                    example: 'NONE'
+                  cmPassphrase:
+                    type: boolean
+                    example: false
+                  cmCertificate:
+                    type: boolean
+                    example: false
+                  cmPasskey:
+                    type: boolean
+                    example: false
+
+  /interface/type:
+    get:
+      tags:
+        - Device
+      summary: Determine which interface should be rendered (local or management)
+      responses:
+        '200':
+          description: Interface type determined
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: [local, management]
+                example: management
+
+  /health:
+    get:
+      tags:
+        - Device
+      summary: Health check
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
 
   /general-info:
     get:
@@ -131,117 +177,105 @@ paths:
                     type: string
                     example: '4.0.01'
 
-  /logs/tripsaver/download/real-time-nameplate:
+  /logs/tripsaver/download/{log_type}:
     get:
       tags:
         - Device
-      summary: Download realtime data - nameplate
+      summary: Download TripSaver log by type
+      parameters:
+        - in: path
+          name: log_type
+          required: true
+          schema:
+            type: string
+            enum:
+              - real-time-nameplate
+              - real-time-variables
+              - real-time-statistics
+              - system-analytics
+              - overcurrent
+              - engineering
+              - security
+              - fault-interrupting
       responses:
         '200':
-          description: Nameplate realtime data as JSON
+          description: TripSaver log downloaded
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-
-  /logs/tripsaver/download/real-time-variables:
-    get:
-      tags:
-        - Device
-      summary: Download realtime data - variables
-      responses:
-        '200':
-          description: Variables realtime data as JSON
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-
-  /logs/tripsaver/download/real-time-statistics:
-    get:
-      tags:
-        - Device
-      summary: Download realtime data - statistics
-      responses:
-        '200':
-          description: Statistics realtime data as JSON
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-
-  /logs/tripsaver/download/overcurrent:
-    get:
-      tags:
-        - Device
-      summary: Download overcurrent/trip events log
-      responses:
-        '200':
-          description: Overcurrent/trip events as CSV
-          content:
             text/csv:
               schema:
                 type: string
                 format: binary
-
-  /logs/tripsaver/download/fault-interrupting:
-    get:
-      tags:
-        - Device
-      summary: Download fault interrupting WFC log
-      responses:
-        '200':
-          description: Fault interrupting log as binary file
-          content:
             application/octet-stream:
               schema:
                 type: string
                 format: binary
 
-  /logs/tripsaver/download/system-analytics:
-    get:
+  /upgrade/:
+    post:
       tags:
         - Device
-      summary: Download system analytics log
+      summary: Upgrade TripSaver firmware (alias)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
       responses:
         '200':
-          description: System analytics as JSON
+          description: TripSaver firmware uploaded successfully (progress stream may follow)
           content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-
-  /logs/tripsaver/download/engineering:
-    get:
-      tags:
-        - Device
-      summary: Download engineering events log
-      responses:
-        '200':
-          description: Engineering events as CSV
-          content:
-            text/csv:
-              schema:
-                type: string
-                format: binary
-
-  /logs/tripsaver/download/security:
-    get:
-      tags:
-        - Device
-      summary: Download security events log
-      responses:
-        '200':
-          description: Security events as CSV
-          content:
-            text/csv:
+            text/plain:
               schema:
                 type: string
-                format: binary
+                example: 'Upload succeeded'
+        '406':
+          description: Digital signature verification was unsuccessful
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Digital signature verification was unsuccessful'
+        '412':
+          description: Uploaded firmware image is the same as the current active one
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Uploaded firmware image is the same as the current active one'
+        '413':
+          description: Uploaded firmware image is too large
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Uploaded firmware image is too large'
+        '415':
+          description: Firmware image is invalid
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Firmware image is invalid'
+        '500':
+          description: Firmware upload failed (internal server error)
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Firmware upload failed'
 
   /firmware/tripsaver/upgrade:
     post:
@@ -338,6 +372,10 @@ paths:
                   message:
                     type: string
                     example: Firmware activated successfully
+            text/plain:
+              schema:
+                type: string
+                example: 'Firmware activated successfully'
         '402':
           description: Specified version is not found in the TripSaver firmware storage
           content:
@@ -348,6 +386,10 @@ paths:
                   message:
                     type: string
                     example: Specified version is not found in the TripSaver firmware storage
+            text/plain:
+              schema:
+                type: string
+                example: 'Specified version is not found in the TripSaver firmware storage'
         '412':
           description: Attempt to activate currently active version
           content:
@@ -358,6 +400,10 @@ paths:
                   message:
                     type: string
                     example: Attempt to activate currently active version
+            text/plain:
+              schema:
+                type: string
+                example: 'Attempt to activate currently active version'
         '503':
           description: TS3 overcurrent algorithm is running
           content:
@@ -368,6 +414,10 @@ paths:
                   message:
                     type: string
                     example: TS3 overcurrent algorithm is running
+            text/plain:
+              schema:
+                type: string
+                example: 'TS3 overcurrent algorithm is running'
         '500':
           description: Internal server error
           content:
@@ -378,6 +428,10 @@ paths:
                   message:
                     type: string
                     example: Internal server error during activation
+            text/plain:
+              schema:
+                type: string
+                example: 'Internal server error during activation'
   /firmware/available-versions:
     get:
       tags:
@@ -418,6 +472,10 @@ paths:
                 file:
                   type: string
                   format: binary
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
       responses:
         '200':
           description: TripSaver configuration imported
@@ -457,10 +515,13 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - mode
               properties:
                 mode:
                   type: string
                   enum: [no-security, passphrase, certificate]
+                  description: The security mode to apply
       responses:
         '200':
           description: Security mode configured
@@ -473,6 +534,11 @@ paths:
       responses:
         '200':
           description: CSR downloaded
+          content:
+            application/pkcs10:
+              schema:
+                type: string
+                format: binary
 
   /security/certificate/upload:
     post:
@@ -489,6 +555,13 @@ paths:
                 certificate:
                   type: string
                   format: binary
+                file:
+                  type: string
+                  format: binary
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
       responses:
         '200':
           description: Certificate uploaded
@@ -516,15 +589,21 @@ paths:
       tags:
         - Device
       summary: Download selected Comm logs
+      description: Download Comm logs by type using query parameter. Frontend uses this endpoint with type query parameter to download specific log types.
       parameters:
         - in: query
           name: type
+          required: true
           schema:
             type: string
-            example: engineering-events
+            enum:
+              - engineering-events
+              - security-events
+              - debug
+          example: engineering-events
       responses:
         '200':
-          description: Comm logs downloaded
+          description: Comm log downloaded as zip file
           content:
             application/zip:
               schema:
@@ -562,6 +641,13 @@ paths:
       requestBody:
         required: true
         content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
           application/json:
             schema:
               type: object
@@ -595,6 +681,10 @@ paths:
                 file:
                   type: string
                   format: binary
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
       responses:
         '200':
           description: Specific configuration imported
@@ -608,11 +698,11 @@ paths:
         '200':
           description: Specific configuration exported
 
-  /security/admin-password/update:
-    put:
+  /password/change:
+    post:
       tags:
         - Security
-      summary: Update admin password
+      summary: Change password for a role
       requestBody:
         required: true
         content:
@@ -620,22 +710,26 @@ paths:
             schema:
               type: object
               required:
+                - role
                 - currentPassword
                 - newPassword
               properties:
+                role:
+                  type: string
+                  enum: [admin, engineer, technician]
                 currentPassword:
                   type: string
                 newPassword:
                   type: string
       responses:
         '200':
-          description: Admin password updated
+          description: Password updated
 
-  /security/engineer-password/update:
-    put:
+  /password/change/local-admin:
+    post:
       tags:
         - Security
-      summary: Update engineer password
+      summary: Change local admin password
       requestBody:
         required: true
         content:
@@ -652,30 +746,7 @@ paths:
                   type: string
       responses:
         '200':
-          description: Admin password updated
-
-  /security/technician-password/update:
-    put:
-      tags:
-        - Security
-      summary: Update technician password
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - currentPassword
-                - newPassword
-              properties:
-                currentPassword:
-                  type: string
-                newPassword:
-                  type: string
-      responses:
-        '200':
-          description: Admin password updated
+          description: Local admin password updated
 
   /security/passwords/reset:
     post:
@@ -685,6 +756,24 @@ paths:
       responses:
         '200':
           description: Passwords reset to factory default
+
+  /password/reset/local-admin:
+    post:
+      tags:
+        - Security
+      summary: Reset local admin password to factory default
+      responses:
+        '200':
+          description: Local admin password reset
+
+  /password/reset/remote-roles:
+    post:
+      tags:
+        - Security
+      summary: Reset remote role passwords to factory default
+      responses:
+        '200':
+          description: Remote role passwords reset
 
   /security/master-reset:
     post:
@@ -738,10 +827,13 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - language
               properties:
                 language:
                   type: string
-                  example: 'English | Spanish'
+                  enum: ['English', 'Spanish', 'Português Brasil']
+                  example: 'English'
       responses:
         '200':
           description: Language updated successfully
@@ -757,10 +849,13 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - dateFormat
               properties:
                 dateFormat:
                   type: string
-                  example: 'mm-dd-yyyy | dd-mm-yyyy | yyyy-mm-dd'
+                  enum: ['mm-dd-yyyy', 'dd-mm-yyyy', 'yyyy-mm-dd']
+                  example: 'mm-dd-yyyy'
       responses:
         '200':
           description: Date format updated successfully
@@ -776,10 +871,13 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - timeFormat
               properties:
                 timeFormat:
                   type: string
-                  example: '12-hour | 24-hour'
+                  enum: ['12-hour', '24-hour']
+                  example: '12-hour'
       responses:
         '200':
           description: Time format updated successfully
@@ -796,9 +894,12 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - passphrase
               properties:
                 passphrase:
                   type: string
+                  description: The passphrase to save for comm module security
       responses:
         '200':
           description: Passphrase saved
@@ -811,3 +912,21 @@ paths:
       responses:
         '200':
           description: Passphrase deleted
+
+  /security/passkey/push:
+    post:
+      tags:
+        - Security
+      summary: Push passkey to TripSaver
+      responses:
+        '200':
+          description: Passkey pushed
+
+  /security/passkey/delete:
+    delete:
+      tags:
+        - Security
+      summary: Delete passkey from TripSaver
+      responses:
+        '200':
+          description: Passkey deleted
