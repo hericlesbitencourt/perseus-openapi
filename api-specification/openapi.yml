@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
-  title: TripSaver® FXR Recloser LTE Communication Module Management Interface
-  description: API for managing TripSaver FXR recloser devices.
+  title: Perseus - TripSaver® FXR Recloser LTE Communication Module API
+  description: OpenAPI specification for the Perseus project API used to manage TripSaver FXR recloser devices.
   version: 1.0.0
 
 servers:
