@@ -110,23 +110,6 @@ paths:
                 enum: [local, management]
                 example: management
 
-  /health:
-    get:
-      tags:
-        - Device
-      summary: Health check
-      responses:
-        '200':
-          description: Service healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-
   /general-info:
     get:
       tags:
@@ -360,12 +343,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: activated
-                  component:
-                    type: string
-                    example: tripsaver
                   version:
                     type: string
                     example: 4.0.01
@@ -498,13 +475,10 @@ paths:
         '200':
           description: Security mode retrieved
           content:
-            application/json:
+            text/plain:
               schema:
-                type: object
-                properties:
-                  mode:
-                    type: string
-                    enum: [no-security, passphrase, certificate]
+                type: string
+                enum: [no-security, passphrase, certificate]
     put:
       tags:
         - Security
@@ -512,19 +486,19 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          text/plain:
             schema:
-              type: object
-              required:
-                - mode
-              properties:
-                mode:
-                  type: string
-                  enum: [no-security, passphrase, certificate]
-                  description: The security mode to apply
+              type: string
+              enum: [no-security, passphrase, certificate]
+              description: The security mode to apply
       responses:
         '200':
           description: Security mode configured
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: [no-security, passphrase, certificate]
 
   /security/csr/download:
     get:
@@ -824,19 +798,19 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          text/plain:
             schema:
-              type: object
-              required:
-                - language
-              properties:
-                language:
-                  type: string
-                  enum: ['English', 'Spanish', 'Português Brasil']
-                  example: 'English'
+              type: string
+              enum: ['English', 'Spanish', 'Português Brasil']
+              example: 'English'
       responses:
         '200':
           description: Language updated successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'English'
 
   /settings/date-format:
     put:
@@ -846,19 +820,19 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          text/plain:
             schema:
-              type: object
-              required:
-                - dateFormat
-              properties:
-                dateFormat:
-                  type: string
-                  enum: ['mm-dd-yyyy', 'dd-mm-yyyy', 'yyyy-mm-dd']
-                  example: 'mm-dd-yyyy'
+              type: string
+              enum: ['mm-dd-yyyy', 'dd-mm-yyyy', 'yyyy-mm-dd']
+              example: 'mm-dd-yyyy'
       responses:
         '200':
           description: Date format updated successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'mm-dd-yyyy'
 
   /settings/time-format:
     put:
@@ -868,19 +842,19 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          text/plain:
             schema:
-              type: object
-              required:
-                - timeFormat
-              properties:
-                timeFormat:
-                  type: string
-                  enum: ['12-hour', '24-hour']
-                  example: '12-hour'
+              type: string
+              enum: ['12-hour', '24-hour']
+              example: '12-hour'
       responses:
         '200':
           description: Time format updated successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: '12-hour'
 
   # Security mode Passphrase selected - extra enpoints
   /security/passphrase/save:
@@ -891,18 +865,18 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          text/plain:
             schema:
-              type: object
-              required:
-                - passphrase
-              properties:
-                passphrase:
-                  type: string
-                  description: The passphrase to save for comm module security
+              type: string
+              description: The passphrase to save for comm module security
       responses:
         '200':
           description: Passphrase saved
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Passphrase saved'
 
   /security/passphrase/delete:
     delete:

@@ -34,7 +34,7 @@
   ></script>
   <script>
     window.onload = function () {
-      const defaultSpecPath = '../api-specification/' + encodeURIComponent('TripSaver® Management Interface.yml');
+      const defaultSpecPath = '../api-specification/' + encodeURIComponent('TripSaver.yml');
       const params = new URLSearchParams(window.location.search);
       const specOverride = params.get('spec');
       const specUrl = specOverride || defaultSpecPath;
